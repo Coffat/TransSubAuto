@@ -1,0 +1,5 @@
+{
+  "name": "WebVTT Subtitle Translator",
+  "description": "An AI-powered tool to translate WebVTT subtitle files from English to Vietnamese while preserving timestamps and structure, using the Gemini API.",
+  "requestFramePermissions": []
+}
