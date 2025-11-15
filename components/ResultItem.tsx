@@ -1,30 +1,35 @@
-
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { TranslationJob } from '../App';
 import { ClipboardIcon } from './icons/ClipboardIcon';
 import { CheckIcon } from './icons/CheckIcon';
 import { ChevronDownIcon } from './icons/ChevronDownIcon';
+import { DownloadIcon } from './icons/DownloadIcon';
+import { RefreshIcon } from './icons/RefreshIcon';
 import { downloadFile } from '../utils/fileUtils';
+import { extractTranslatedVttContent } from '../utils/vttUtils';
 import clsx from 'clsx';
 
 interface ResultItemProps {
   job: TranslationJob;
+  onRetryJob: (id: number) => void;
 }
 
-export const ResultItem: React.FC<ResultItemProps> = ({ job }) => {
+export const ResultItem: React.FC<ResultItemProps> = ({ job, onRetryJob }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
 
+  const cleanVtt = useMemo(() => extractTranslatedVttContent(job.translatedVtt), [job.translatedVtt]);
+
   const handleCopy = () => {
-    if (!job.translatedVtt) return;
-    navigator.clipboard.writeText(job.translatedVtt);
+    if (!cleanVtt) return;
+    navigator.clipboard.writeText(cleanVtt);
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2000);
   };
   
   const handleDownload = () => {
-    if (!job.translatedVtt) return;
-    downloadFile(job.translatedVtt, job.file.name.replace('.vtt', '_vi.vtt'));
+    if (!cleanVtt) return;
+    downloadFile(cleanVtt, job.file.name.replace('.vtt', '_vi.vtt'));
   }
 
   const isSuccess = job.status === 'completed';
@@ -34,57 +39,85 @@ export const ResultItem: React.FC<ResultItemProps> = ({ job }) => {
         "bg-slate-700/50 rounded-lg transition-all duration-300",
         isSuccess ? "border-l-4 border-green-500" : "border-l-4 border-red-500"
     )}>
-      <button 
-        className="w-full flex items-center justify-between p-3 text-left"
-        onClick={() => setIsExpanded(!isExpanded)}
-        aria-expanded={isExpanded}
-      >
-        <span className="font-mono text-sm truncate mr-4 text-slate-200">{job.file.name}</span>
-        <div className="flex items-center space-x-2">
+      <div className="w-full flex items-center justify-between p-3 text-left">
+        <div 
+          className="flex items-center flex-grow cursor-pointer truncate mr-4 group"
+          onClick={() => setIsExpanded(!isExpanded)}
+          role="button"
+          tabIndex={0}
+          onKeyPress={(e) => ['Enter', ' '].includes(e.key) && setIsExpanded(!isExpanded)}
+          aria-expanded={isExpanded}
+        >
+          <span className="font-mono text-sm truncate text-slate-200 group-hover:text-cyan-400 transition-colors">{job.file.name}</span>
+          <ChevronDownIcon className={clsx("w-5 h-5 text-slate-400 transition-transform ml-2 flex-shrink-0", isExpanded && "rotate-180")} />
+        </div>
+        
+        <div className="flex items-center space-x-3 flex-shrink-0">
+          <button 
+              onClick={handleCopy} 
+              className="p-1.5 rounded-full text-slate-400 hover:bg-slate-600 hover:text-cyan-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-700 focus:ring-cyan-500 transition-colors"
+              aria-label="Copy to clipboard"
+              title={isCopied ? 'Copied!' : 'Copy to clipboard'}
+              disabled={!cleanVtt}
+          >
+              {isCopied ? <CheckIcon className="w-5 h-5 text-green-400" /> : <ClipboardIcon className="w-5 h-5" />}
+          </button>
+          
+          <button 
+              onClick={handleDownload}
+              className="p-1.5 rounded-full text-slate-400 hover:bg-slate-600 hover:text-cyan-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-700 focus:ring-cyan-500 transition-colors"
+              aria-label="Download translated file"
+              title="Download translated file"
+              disabled={!cleanVtt}
+          >
+              <DownloadIcon className="w-5 h-5" />
+          </button>
+          
+          <div className="flex items-center space-x-1.5">
+            {job.status === 'error' && (
+              <button 
+                onClick={() => onRetryJob(job.id)}
+                className="p-1.5 rounded-full text-slate-400 hover:bg-slate-600 hover:text-cyan-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-700 focus:ring-cyan-500 transition-colors"
+                aria-label="Retry translation"
+                title="Retry translation"
+              >
+                  <RefreshIcon className="w-5 h-5" />
+              </button>
+            )}
             <span className={clsx(
                 "text-xs font-bold uppercase px-2 py-1 rounded-full",
                 isSuccess ? "bg-green-500/20 text-green-300" : "bg-red-500/20 text-red-300"
             )}>
                 {job.status}
             </span>
-            <ChevronDownIcon className={clsx("w-5 h-5 text-slate-400 transition-transform", isExpanded && "rotate-180")} />
+          </div>
         </div>
-      </button>
+      </div>
 
       {isExpanded && (
         <div className="p-3 border-t border-slate-600/50">
-          {isSuccess && job.translatedVtt ? (
-            <div>
-              <div className="relative">
-                <textarea
-                  readOnly
-                  value={job.translatedVtt}
-                  className="w-full h-48 p-2 bg-slate-900/50 rounded-md text-slate-300 font-mono text-xs resize-none focus:outline-none"
-                  spellCheck="false"
-                />
-              </div>
-              <div className="flex space-x-2 mt-2">
-                <button 
-                    onClick={handleCopy} 
-                    className="flex-1 inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md text-slate-200 bg-slate-600 hover:bg-slate-500 transition-colors"
-                >
-                    {isCopied ? <CheckIcon className="w-4 h-4 mr-2 text-green-400" /> : <ClipboardIcon className="w-4 h-4 mr-2" />}
-                    {isCopied ? 'Copied!' : 'Copy'}
-                </button>
-                 <button 
-                    onClick={handleDownload}
-                    className="flex-1 inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md text-white bg-cyan-600 hover:bg-cyan-700 transition-colors"
-                >
-                    Download
-                </button>
-              </div>
-            </div>
-          ) : (
+          {job.status !== 'error' && job.translatedVtt !== undefined ? (
+            <textarea
+              readOnly
+              value={cleanVtt}
+              className="w-full h-48 p-2 bg-slate-900/50 rounded-md text-slate-300 font-mono text-xs resize-none focus:outline-none"
+              spellCheck="false"
+            />
+          ) : job.status === 'error' ? (
             <div className="p-2 bg-red-900/30 rounded-md">
                 <p className="text-red-300 text-sm font-semibold">Error:</p>
                 <p className="text-red-400 text-xs mt-1 font-mono">{job.error}</p>
+                {job.translatedVtt && (
+                     <textarea
+                        readOnly
+                        value={extractTranslatedVttContent(job.translatedVtt)}
+                        className="w-full h-32 p-2 mt-2 bg-slate-900/50 rounded-md text-slate-400 font-mono text-xs resize-y focus:outline-none"
+                        spellCheck="false"
+                        placeholder="Partial output for debugging..."
+                    />
+                )}
             </div>
-          )}
+          ) : null}
         </div>
       )}
     </div>

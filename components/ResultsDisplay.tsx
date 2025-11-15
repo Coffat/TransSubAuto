@@ -1,13 +1,13 @@
-
 import React from 'react';
 import { TranslationJob } from '../App';
 import { ResultItem } from './ResultItem';
 
 interface ResultsDisplayProps {
   jobs: TranslationJob[];
+  onRetryJob: (id: number) => void;
 }
 
-export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ jobs }) => {
+export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ jobs, onRetryJob }) => {
   const processedJobs = jobs.filter(job => job.status === 'completed' || job.status === 'error');
 
   return (
@@ -19,7 +19,7 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ jobs }) => {
       ) : (
         <div className="h-full overflow-y-auto p-4 space-y-3">
             {processedJobs.map(job => (
-                <ResultItem key={job.id} job={job} />
+                <ResultItem key={job.id} job={job} onRetryJob={onRetryJob} />
             ))}
         </div>
       )}
