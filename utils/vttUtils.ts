@@ -1,3 +1,4 @@
+
 export interface VttParseResult {
   header: string;
   cues: string[];
@@ -71,16 +72,4 @@ export const countCues = (vttContent: string): number => {
   // A simple regex to count occurrences of the timestamp arrow is reliable.
   const matches = vttContent.match(/-->/g);
   return matches ? matches.length : 0;
-};
-
-/**
- * Extracts the core translated VTT content from the AI's raw output, stripping markers.
- * @param rawText The full string response from the AI.
- * @returns The cleaned VTT content.
- */
-export const extractTranslatedVttContent = (rawText?: string): string => {
-    if (!rawText) return '';
-    // This regex captures the content between the start marker and either the end marker or the end of the string.
-    const match = rawText.match(/=== TRANSLATED VTT ===\s*([\s\S]*?)(?:\s*=== END OF TRANSLATION ===|$)/);
-    return match && match[1] ? match[1].trim() : rawText.trim();
 };

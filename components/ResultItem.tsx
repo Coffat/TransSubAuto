@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { TranslationJob } from '../App';
 import { ClipboardIcon } from './icons/ClipboardIcon';
@@ -6,7 +7,6 @@ import { ChevronDownIcon } from './icons/ChevronDownIcon';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { RefreshIcon } from './icons/RefreshIcon';
 import { downloadFile } from '../utils/fileUtils';
-import { extractTranslatedVttContent } from '../utils/vttUtils';
 import clsx from 'clsx';
 
 interface ResultItemProps {
@@ -18,7 +18,7 @@ export const ResultItem: React.FC<ResultItemProps> = ({ job, onRetryJob }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
 
-  const cleanVtt = useMemo(() => extractTranslatedVttContent(job.translatedVtt), [job.translatedVtt]);
+  const cleanVtt = useMemo(() => (job.translatedVtt || '').trim(), [job.translatedVtt]);
 
   const handleCopy = () => {
     if (!cleanVtt) return;
@@ -36,7 +36,7 @@ export const ResultItem: React.FC<ResultItemProps> = ({ job, onRetryJob }) => {
 
   return (
     <div className={clsx(
-        "bg-slate-700/50 rounded-lg transition-all duration-300",
+        "bg-slate-700/50 rounded-lg transition-all duration-300 animate-fade-in",
         isSuccess ? "border-l-4 border-green-500" : "border-l-4 border-red-500"
     )}>
       <div className="w-full flex items-center justify-between p-3 text-left">
@@ -110,7 +110,7 @@ export const ResultItem: React.FC<ResultItemProps> = ({ job, onRetryJob }) => {
                 {job.translatedVtt && (
                      <textarea
                         readOnly
-                        value={extractTranslatedVttContent(job.translatedVtt)}
+                        value={(job.translatedVtt || '').trim()}
                         className="w-full h-32 p-2 mt-2 bg-slate-900/50 rounded-md text-slate-400 font-mono text-xs resize-y focus:outline-none"
                         spellCheck="false"
                         placeholder="Partial output for debugging..."
